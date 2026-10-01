@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Simple Ethereum Trading Bot",
   "scripts": {
-    "server": "node server/index.js",
-    "client": "npm start --prefix client",
+    "server": "cd server && node index.js",
+    "client": "npm run dev --prefix client",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "dependencies": {
