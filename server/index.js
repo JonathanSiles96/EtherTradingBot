@@ -19,8 +19,12 @@ mongoose
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/keys', require('./routes/keys'));
 app.use('/api/price', require('./routes/price'));
+app.use('/api/trade', require('./routes/trade'));
+app.use('/api/alerts', require('./routes/alerts'));
+app.use('/api/history', require('./routes/history'));
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   etherScan.start();

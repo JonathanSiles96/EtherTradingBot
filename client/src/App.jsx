@@ -6,6 +6,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ConnectKey from './pages/ConnectKey';
+import Dashboard from './pages/Dashboard';
+import Alerts from './pages/Alerts';
 import './index.css';
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/connect" element={<ConnectKey />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/alerts" element={<Alerts />} />
             </Routes>
           </main>
           <Footer />

@@ -30,4 +30,31 @@ export const api = {
     }),
   getKeyStatus: () => request('/keys/status'),
   getPrice: () => request('/price'),
+
+  getHistory: (limit = 50) => request(`/history?limit=${limit}`),
+  getStats: () => request('/history/stats'),
+
+  getBalance: () => request('/trade/balance'),
+  getOrders: () => request('/trade/orders'),
+  placeBuy: (amount, price) =>
+    request('/trade/buy', {
+      method: 'POST',
+      body: JSON.stringify({ amount, price }),
+    }),
+  placeSell: (amount, price) =>
+    request('/trade/sell', {
+      method: 'POST',
+      body: JSON.stringify({ amount, price }),
+    }),
+  cancelOrder: (orderId) =>
+    request(`/trade/orders/${orderId}`, { method: 'DELETE' }),
+
+  getAlerts: () => request('/alerts'),
+  createAlert: (type, targetPrice) =>
+    request('/alerts', {
+      method: 'POST',
+      body: JSON.stringify({ type, targetPrice }),
+    }),
+  removeAlert: (alertId) =>
+    request(`/alerts/${alertId}`, { method: 'DELETE' }),
 };

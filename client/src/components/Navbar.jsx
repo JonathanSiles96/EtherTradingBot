@@ -46,6 +46,13 @@ const styles = {
     background: 'var(--accent)',
     color: '#fff',
   },
+  navLink: {
+    color: 'var(--text-secondary)',
+    textDecoration: 'none',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    transition: 'color 0.2s',
+  },
   userEmail: {
     color: 'var(--text-secondary)',
     fontSize: '0.85rem',
@@ -67,6 +74,9 @@ export default function Navbar() {
       <div style={styles.buttons}>
         {user ? (
           <>
+            <Link to="/dashboard" style={styles.navLink}>Dashboard</Link>
+            <Link to="/alerts" style={styles.navLink}>Alerts</Link>
+            <Link to="/connect" style={styles.navLink}>API Keys</Link>
             <span style={styles.userEmail}>{user.email}</span>
             <button onClick={logout} style={{ ...styles.btn, ...styles.btnOutline }}>
               Logout
