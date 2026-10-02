@@ -1,35 +1,14 @@
 const express = require('express');
+const etherScan = require('../services/etherScan');
 
 const router = express.Router();
 
-let cachedPrice = null;
-let lastFetch = 0;
-const CACHE_MS = 15000;
-
-router.get('/', async (req, res) => {
-  try {
-    const now = Date.now();
-    if (cachedPrice && now - lastFetch < CACHE_MS) {
-      return res.json(cachedPrice);
-    }
-
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true'
-    );
-    const data = await response.json();
-
-    cachedPrice = {
-      price: data.ethereum.usd,
-      change24h: data.ethereum.usd_24h_change,
-    };
-    lastFetch = now;
-
-    res.json(cachedPrice);
-  } catch (err) {
-    console.error(err);
-    if (cachedPrice) return res.json(cachedPrice);
-    res.status(500).json({ msg: 'Failed to fetch price' });
+router.get('/', (req, res) => {
+  const data = etherScan.getLatestPrice();
+  if (!data) {
+    return res.status(503).json({ msg: 'Price not available yet' });
   }
+  res.json({ price: data.price, change24h: data.change24h, timestamp: data.timestamp });
 });
 
 module.exports = router;

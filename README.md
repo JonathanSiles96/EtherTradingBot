@@ -2,6 +2,8 @@
 
 A simple Ethereum trading bot web app built with the MERN stack.
 
+![Homepage](screenshots/homepage.png)
+
 ## Features
 
 - Dark theme UI with ETH purple accent
