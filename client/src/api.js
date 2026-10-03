@@ -57,4 +57,7 @@ export const api = {
     }),
   removeAlert: (alertId) =>
     request(`/alerts/${alertId}`, { method: 'DELETE' }),
+
+  getTransactions: (address, page = 1) =>
+    request(`/transactions/${address}?page=${page}`),
 };

@@ -77,6 +77,7 @@ export default function Navbar() {
             <Link to="/dashboard" style={styles.navLink}>Dashboard</Link>
             <Link to="/alerts" style={styles.navLink}>Alerts</Link>
             <Link to="/connect" style={styles.navLink}>API Keys</Link>
+            <Link to="/transactions" style={styles.navLink}>Tx History</Link>
             <span style={styles.userEmail}>{user.email}</span>
             <button onClick={logout} style={{ ...styles.btn, ...styles.btnOutline }}>
               Logout
@@ -84,6 +85,7 @@ export default function Navbar() {
           </>
         ) : (
           <>
+            <Link to="/transactions" style={styles.navLink}>Tx History</Link>
             <Link to="/login" style={{ ...styles.btn, ...styles.btnOutline }}>
               Login
             </Link>

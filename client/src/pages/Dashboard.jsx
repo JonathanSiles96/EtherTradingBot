@@ -41,6 +41,24 @@ const s = {
     color: 'var(--danger)', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
   },
   empty: { color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '16px 0' },
+  walletRow: { display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' },
+  walletInput: {
+    flex: 1, minWidth: '240px', padding: '8px 12px', background: 'var(--bg-primary)',
+    border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)',
+    fontSize: '0.85rem', outline: 'none', fontFamily: 'monospace',
+  },
+  walletBtn: {
+    padding: '8px 16px', background: 'var(--accent)', color: '#fff',
+    border: 'none', borderRadius: '6px', fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap',
+  },
+  txHash: {
+    fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--accent-light)',
+    maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block',
+  },
+  txAddr: {
+    fontFamily: 'monospace', fontSize: '0.78rem', maxWidth: '110px',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block',
+  },
 };
 
 export default function Dashboard() {
@@ -53,6 +71,9 @@ export default function Dashboard() {
   const [price, setPrice] = useState('');
   const [msg, setMsg] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [walletAddress, setWalletAddress] = useState(localStorage.getItem('walletAddress') || '0x1251B81aB3F2DF2FF60358aa80dEa8e7858Bf9C1');
+  const [transactions, setTransactions] = useState([]);
+  const [txLoading, setTxLoading] = useState(false);
 
   useEffect(() => {
     if (!token) navigate('/login');
@@ -63,7 +84,29 @@ export default function Dashboard() {
     api.getStats().then(setStats).catch(() => {});
     api.getBalance().then(setBalance).catch(() => {});
     api.getOrders().then(setOrders).catch(() => {});
+    if (walletAddress && /^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+      loadTransactions(walletAddress);
+    }
   }, [token]);
+
+  const loadTransactions = async (addr) => {
+    setTxLoading(true);
+    try {
+      const data = await api.getTransactions(addr, 1);
+      setTransactions(data.transactions.slice(0, 10));
+    } catch {
+      setTransactions([]);
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  const handleWalletSave = () => {
+    const trimmed = walletAddress.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(trimmed)) return;
+    localStorage.setItem('walletAddress', trimmed);
+    loadTransactions(trimmed);
+  };
 
   const handleTrade = async (side) => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -157,6 +200,55 @@ export default function Dashboard() {
                   <td style={s.td}>${o.price}</td>
                   <td style={s.td}>{o.status}</td>
                   <td style={s.td}><button style={s.btnSmall} onClick={() => handleCancel(o.id)}>Cancel</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div style={s.section}>
+        <h2 style={s.sectionTitle}>Recent Transactions</h2>
+        <div style={s.walletRow}>
+          <input
+            style={s.walletInput}
+            type="text"
+            placeholder="0x... Enter your wallet address"
+            value={walletAddress}
+            onChange={(e) => setWalletAddress(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleWalletSave()}
+          />
+          <button style={s.walletBtn} onClick={handleWalletSave} disabled={txLoading}>
+            {txLoading ? 'Loading...' : 'Load'}
+          </button>
+        </div>
+        {transactions.length === 0 ? (
+          <p style={s.empty}>{walletAddress ? 'No transactions found' : 'Enter your wallet address to see recent transactions'}</p>
+        ) : (
+          <table style={s.table}>
+            <thead>
+              <tr>
+                <th style={s.th}>Hash</th>
+                <th style={s.th}>Date</th>
+                <th style={s.th}>From</th>
+                <th style={s.th}>To</th>
+                <th style={s.th}>Value (ETH)</th>
+                <th style={s.th}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((tx) => (
+                <tr key={tx.hash}>
+                  <td style={s.td}><span style={s.txHash} title={tx.hash}>{tx.hash}</span></td>
+                  <td style={s.td}>{new Date(tx.timestamp).toLocaleDateString()}</td>
+                  <td style={s.td}><span style={{ ...s.txAddr, color: tx.from.toLowerCase() === walletAddress.toLowerCase() ? 'var(--danger)' : 'var(--text-primary)' }} title={tx.from}>{tx.from}</span></td>
+                  <td style={s.td}><span style={{ ...s.txAddr, color: tx.to?.toLowerCase() === walletAddress.toLowerCase() ? 'var(--success)' : 'var(--text-primary)' }} title={tx.to}>{tx.to || '—'}</span></td>
+                  <td style={s.td}>{tx.value}</td>
+                  <td style={s.td}>
+                    {tx.isError
+                      ? <span style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '0.8rem' }}>Failed</span>
+                      : <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.8rem' }}>OK</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>

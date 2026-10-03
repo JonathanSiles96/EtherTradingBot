@@ -8,6 +8,7 @@ import Signup from './pages/Signup';
 import ConnectKey from './pages/ConnectKey';
 import Dashboard from './pages/Dashboard';
 import Alerts from './pages/Alerts';
+import Transactions from './pages/Transactions';
 import './index.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
               <Route path="/connect" element={<ConnectKey />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/alerts" element={<Alerts />} />
+              <Route path="/transactions" element={<Transactions />} />
             </Routes>
           </main>
           <Footer />
